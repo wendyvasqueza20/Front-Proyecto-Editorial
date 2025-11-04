@@ -1,0 +1,142 @@
+/* ==========  VARIABLES GUAYMURAS  ========== */
+:root {
+  --bg: #f5f1eb;
+  --primary: #8a2c31;
+  --primary-dark: #6d2125;
+  --glass: rgba(255, 255, 255, 0.55);
+  --shadow: rgba(138, 44, 49, 0.15);
+  --radius: 24px;
+  --brown: #5c3d24;
+  --brown-light: #8b6f47;
+  --transition: 0.3s ease;
+}
+
+/* ---------- contenedor ---------- */
+.parametros-container {
+  padding: 48px 64px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.parametros-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 0 0 8px;
+}
+
+.parametros-desc {
+  font-size: 15px;
+  color: var(--brown-light);
+  margin-bottom: 32px;
+}
+
+/* ---------- tarjeta glass ---------- */
+.parametros-card {
+  background: var(--glass);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius);
+  box-shadow: 0 25px 50px var(--shadow);
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ---------- grupo ---------- */
+.parametros-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.parametros-group label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--brown);
+}
+
+.parametros-group input,
+.parametros-group select {
+  height: 48px;
+  padding: 0 16px;
+  border: 1.5px solid transparent;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 15px;
+  color: var(--brown);
+  outline: none;
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+
+.parametros-group input:focus,
+.parametros-group select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(138, 44, 49, 0.15);
+}
+
+/* ---------- checkboxes (solo para UsuariosRoles) ---------- */
+.permisos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.permiso-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--brown);
+  cursor: pointer;
+}
+
+.permiso-check input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+}
+
+/* ---------- botones ---------- */
+.parametros-btn {
+  height: 48px;
+  padding: 0 24px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: transform 0.25s, box-shadow 0.25s;
+}
+
+.parametros-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(138, 44, 49, 0.35);
+}
+
+.respaldo-buttons {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.parametros-btn.secondary {
+  background: var(--brown-light);
+}
+
+.parametros-btn.secondary:hover {
+  box-shadow: 0 8px 20px rgba(139, 111, 71, 0.35);
+}
+
+/* ---------- responsive ---------- */
+@media (max-width: 768px) {
+  .parametros-container {
+    padding: 32px 24px;
+  }
+  .parametros-card {
+    padding: 28px;
+  }
+}

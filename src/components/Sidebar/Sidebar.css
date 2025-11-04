@@ -1,0 +1,115 @@
+/* Sidebar.css */
+:root {
+  --glass: rgba(255, 255, 255, 0.55);
+  --shadow: rgba(138, 44, 49, 0.15);
+  --primary: #8a2c31;
+  --brown: #5c3d24;
+  --brown-light: #8b6f47;
+  --transition: 0.3s ease;
+}
+
+.sidebar {
+  width: 300px; /* más ancho */
+  display: flex;
+  flex-direction: column;
+  padding: 32px 20px;
+  background: var(--glass);
+  backdrop-filter: blur(20px);
+  border-right: 1px solid var(--shadow);
+}
+
+.sidebar-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.sidebar-logo-img {
+  height: 60px;
+  width: auto;
+}
+
+.sidebar-brand-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.sidebar-nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sidebar-link,
+.sidebar-parent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  color: var(--brown);
+  text-decoration: none;
+  background: none;
+  border: none;
+  width: 100%;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+  justify-content: flex-start !important;
+  text-align: left;
+}
+
+.sidebar-parent {
+  justify-content: space-between;
+}
+
+.sidebar-arrow {
+  font-size: 10px;
+  transition: transform var(--transition);
+  margin-left: auto;
+}
+
+.sidebar-arrow.open {
+  transform: rotate(180deg);
+}
+
+.sidebar-link:hover,
+.sidebar-link.active,
+.sidebar-parent:hover {
+  background: rgba(138, 44, 49, 0.08);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.sidebar-sub {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.3s ease;
+  padding-left: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.sidebar-sub a {
+  padding: 8px 12px;
+  font-size: 14px;
+  border-radius: 8px;
+  color: var(--brown-light);
+  text-decoration: none;
+  transition: background var(--transition), color var(--transition);
+  text-align: left;
+}
+
+.sidebar-sub a:hover,
+.sidebar-sub a.active {
+  background: rgba(138, 44, 49, 0.06);
+  color: var(--primary);
+}

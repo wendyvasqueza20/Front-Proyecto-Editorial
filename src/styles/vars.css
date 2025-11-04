@@ -1,0 +1,11 @@
+:root {
+  --bg: #f5f1eb;
+  --primary: #8a2c31;
+  --primary-dark: #6d2125;
+  --glass: rgba(255, 255, 255, 0.55);
+  --shadow: rgba(138, 44, 49, 0.15);
+  --radius: 24px;
+  --brown: #5c3d24;
+  --brown-light: #8b6f47;
+  --transition: 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
