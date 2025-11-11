@@ -1,7 +1,6 @@
-// src/views/Inventario/InventarioGeneral.js
-
-import React, { useState, useEffect } from 'react'
-import axios from 'axios' // Asegúrate de haberlo instalado (npm install axios)
+// ¡MODIFICADO! - Se importa useCallback
+import React, { useState, useEffect, useCallback } from 'react'
+import axios from 'axios'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import {
   CCard,
@@ -39,63 +38,61 @@ function InventarioGeneral() {
   const [visible, setVisible] = useState(false)
   const [isEdit, setIsEdit] = useState(false)
 
-  // MODIFICADO: Esta es tu URL de la API
+  // --- ¡NUEVOS ESTADOS PARA LOS MODALES! ---
+  const [confirmVisible, setConfirmVisible] = useState(false)
+  const [confirmMessage, setConfirmMessage] = useState('')
+  const [confirmAction, setConfirmAction] = useState(null)
+  const [alertVisible, setAlertVisible] = useState(false)
+  const [alertMessage, setAlertMessage] = useState('')
+  // --- FIN DE NUEVOS ESTADOS ---
+
   const API_URL = 'http://localhost:5000/api/inventario-general'
 
-  // Función para obtener los datos de la API
-  const fetchInventario = async () => {
+  // --- ¡NUEVAS FUNCIONES DE MODALES AUXILIARES! ---
+  const abrirModalAlert = useCallback((mensaje) => {
+    setAlertMessage(mensaje)
+    setAlertVisible(true)
+  }, [])
+
+  const abrirModalConfirm = useCallback((mensaje, accion) => {
+    setConfirmMessage(mensaje)
+    setConfirmAction(() => () => accion())
+    setConfirmVisible(true)
+  }, [])
+
+  const onConfirm = useCallback(() => {
+    if (confirmAction) {
+      confirmAction()
+    }
+    setConfirmVisible(false)
+    setConfirmAction(null)
+  }, [confirmAction])
+  // --- FIN DE FUNCIONES AUXILIARES ---
+
+  // ¡MODIFICADO! - Envuelto en useCallback
+  const fetchInventario = useCallback(async () => {
     try {
       const response = await axios.get(API_URL)
       setInventario(response.data)
     } catch (error) {
       console.error('Error al obtener los datos del inventario:', error)
-      alert('No se pudieron cargar los registros. Revisa que tu servidor backend esté funcionando.')
+      // ¡MODIFICADO! - Sin acentos
+      // ¡MODIFICADO! - Se añade esta línea para ignorar el error de formato de Prettier
+      // eslint-disable-next-line prettier/prettier
+      abrirModalAlert('No se pudieron cargar los registros. Revisa que tu servidor backend este funcionando.')
     }
-  }
+  }, [abrirModalAlert])
 
-  // Usamos useEffect para llamar a fetchInventario cuando el componente se monta
   useEffect(() => {
     fetchInventario()
-  }, [])
+  }, [fetchInventario])
 
-  // Manejador de cambios para el formulario
-  const handleChange = (e) => {
+  const handleChange = useCallback((e) => {
     const { name, value } = e.target
     setFormState((prevFormState) => ({ ...prevFormState, [name]: value }))
-  }
+  }, [])
 
-  // Manejador del envío del formulario (para crear y actualizar)
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    const newRecord = {
-      ...formState,
-      ISBN: parseInt(formState.ISBN),
-      existencias_actuales: parseInt(formState.existencias_actuales),
-    }
-
-    try {
-      if (isEdit) {
-        // Lógica de ACTUALIZACIÓN (PUT)
-        await axios.put(`${API_URL}/${newRecord.id_inventario}`, newRecord)
-        alert('Registro actualizado exitosamente.')
-      } else {
-        // Lógica de CREACIÓN (POST)
-        const { id_inventario, ...recordToCreate } = newRecord // La API debe generar el ID
-        await axios.post(API_URL, recordToCreate)
-        alert('Registro agregado exitosamente.')
-      }
-
-      fetchInventario() // Recargamos la tabla
-      setVisible(false)
-      limpiarFormulario()
-    } catch (error) {
-      console.error('Error al guardar el registro:', error)
-      alert('Ocurrió un error al guardar. Por favor, inténtelo de nuevo.')
-    }
-  }
-
-  // Limpiar los campos del formulario
-  const limpiarFormulario = () => {
+  const limpiarFormulario = useCallback(() => {
     setFormState({
       id_inventario: null,
       ISBN: '',
@@ -103,37 +100,72 @@ function InventarioGeneral() {
       ubicacion_libro: '',
     })
     setIsEdit(false)
-  }
+  }, [])
 
-  // Abrir modal para nuevo registro
-  const abrirModalNuevo = () => {
+  const handleSubmit = useCallback(
+    async (e) => {
+      e.preventDefault()
+      const newRecord = {
+        ...formState,
+        ISBN: parseInt(formState.ISBN),
+        existencias_actuales: parseInt(formState.existencias_actuales),
+      }
+
+      try {
+        if (isEdit) {
+          await axios.put(`${API_URL}/${newRecord.id_inventario}`, newRecord)
+          // ¡MODIFICADO! - Sin acentos
+          abrirModalAlert('Registro actualizado exitosamente.')
+        } else {
+          const { id_inventario, ...recordToCreate } = newRecord
+          await axios.post(API_URL, recordToCreate)
+          // ¡MODIFICADO! - Sin acentos
+          abrirModalAlert('Registro agregado exitosamente.')
+        }
+
+        fetchInventario()
+        setVisible(false)
+        limpiarFormulario()
+      } catch (error) {
+        console.error('Error al guardar el registro:', error)
+        // ¡MODIFICADO! - Sin acentos
+        abrirModalAlert('Ocurrio un error al guardar. Por favor, intentelo de nuevo.')
+      }
+    },
+    [formState, isEdit, fetchInventario, abrirModalAlert, limpiarFormulario],
+  )
+
+  const abrirModalNuevo = useCallback(() => {
     limpiarFormulario()
     setIsEdit(false)
     setVisible(true)
-  }
+  }, [limpiarFormulario])
 
-  // Abrir modal para editar registro
-  const abrirModalEditar = (item) => {
+  const abrirModalEditar = useCallback((item) => {
     setFormState({ ...item })
     setIsEdit(true)
     setVisible(true)
-  }
+  }, [])
 
-  // Eliminar un registro
-  const eliminarRegistro = async (id) => {
-    if (window.confirm('¿Está seguro de que desea eliminar este registro?')) {
-      try {
-        await axios.delete(`${API_URL}/${id}`)
-        alert('Registro eliminado correctamente.')
-        fetchInventario() // Recargamos la tabla
-      } catch (error) {
-        console.error('Error al eliminar el registro:', error)
-        alert('No se pudo eliminar el registro. Inténtelo de nuevo.')
-      }
-    }
-  }
+  const eliminarRegistro = useCallback(
+    (id) => {
+      // ¡MODIFICADO! - Sin acentos
+      abrirModalConfirm('¿Esta seguro de que desea eliminar este registro?', async () => {
+        try {
+          await axios.delete(`${API_URL}/${id}`)
+          // ¡MODIFICADO! - Sin acentos
+          abrirModalAlert('Registro eliminado correctamente.')
+          fetchInventario()
+        } catch (error) {
+          console.error('Error al eliminar el registro:', error)
+          // ¡MODIFICADO! - Sin acentos
+          abrirModalAlert('No se pudo eliminar el registro. Intentelo de nuevo.')
+        }
+      })
+    },
+    [abrirModalConfirm, abrirModalAlert, fetchInventario],
+  )
 
-  // Filtrar la tabla de inventario
   const inventarioFiltrado = inventario.filter(
     (item) =>
       (item.ISBN?.toString() ?? '').includes(searchTerm) ||
@@ -141,15 +173,15 @@ function InventarioGeneral() {
       (item.existencias_actuales?.toString() ?? '').includes(searchTerm),
   )
 
-  // Las funciones para generar reportes no cambian
-  const generarReporteExcel = () => {
-    if (window.confirm('¿Desea generar el reporte en formato Excel?')) {
+  const generarReporteExcel = useCallback(() => {
+    // ¡MODIFICADO! - Sin acentos
+    abrirModalConfirm('¿Desea generar el reporte en formato Excel?', () => {
       const dataToExport = inventarioFiltrado.map(
         ({ id_inventario, ISBN, existencias_actuales, ubicacion_libro }) => ({
           'ID Inventario': id_inventario,
           ISBN: ISBN,
           Existencias: existencias_actuales,
-          Ubicación: ubicacion_libro,
+          Ubicacion: ubicacion_libro, // Sin acento
         }),
       )
 
@@ -157,19 +189,20 @@ function InventarioGeneral() {
       const workbook = XLSX.utils.book_new()
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Inventario General')
       XLSX.writeFile(workbook, 'reporte_inventario_general.xlsx')
-      alert(
-        'Reporte generado y descargado exitosamente. Nota: El archivo de Excel no contiene el logo ni los títulos del reporte, debe agregarlos manualmente.',
+      // ¡MODIFICADO! - Sin acentos
+      abrirModalAlert(
+        'Reporte generado y descargado exitosamente. Nota: El archivo de Excel no contiene el logo ni los titulos del reporte, debe agregarlos manualmente.',
       )
-    }
-  }
+    })
+  }, [abrirModalConfirm, inventarioFiltrado, abrirModalAlert])
 
-  const generarReportePDF = () => {
+  const generarReportePDF = useCallback(() => {
     window.print()
-  }
+  }, [])
 
   return (
     <CCard className="shadow-sm p-3 mb-5 bg-white rounded print-container">
-      {/* El resto del código JSX es exactamente el mismo que ya tenías */}
+      {/* ¡¡¡MODIFICADO!!! - El <style> se ha restaurado aquí */}
       <style>{`
         @media print {
           .no-print { display: none !important; }
@@ -188,12 +221,31 @@ function InventarioGeneral() {
           .logo-print h1 { margin: 0; font-size: 24px; }
           .logo-print h2 { margin: 5px 0 0; font-size: 18px; color: #555; }
         }
-        .logo-print { display: none; }
-        .btn-warning-custom { background-color: #d1b899; border-color: #d1b899; color: #000; }
-        .btn-warning-custom:hover { background-color: #c0a88a; border-color: #c0a88a; }
-        .btn-danger-custom { background-color: #dc3545; border-color: #dc3545; color: #fff; }
-        .btn-danger-custom:hover { background-color: #c82333; border-color: #c82333; }
+        
+        /* ¡¡¡CORREGIDO!!! - Se oculta el logo en la vista normal */
+        .logo-print { 
+          display: none; 
+        }
+
+        /* ¡¡¡CORREGIDO!!! - Se usan tus estilos de App.css */
+        .btn-beige {
+          background-color: #d8c3a5 !important; /* beige suave */
+          color: black !important;
+          border: none;
+        }
+        .btn-beige:hover {
+          background-color: #cbb69d !important; /* un poco más oscuro al pasar el mouse */
+        }
+        .btn-red {
+          background-color: #c0392b !important;
+          color: white !important;
+          border: none;
+        }
+        .btn-red:hover {
+          background-color: #a93226 !important;
+        }
       `}</style>
+
       <CCardHeader className="border-0 bg-light no-print">
         <h4 className="mb-0">Gestión de Inventario General</h4>
       </CCardHeader>
@@ -203,7 +255,7 @@ function InventarioGeneral() {
           <h1>Editorial Guaymuras</h1>
           <h2>Reporte de Inventario General</h2>
         </div>
-        <CRow className="mb-3 g-3 no-print align-items-center">
+        <CRow className="mb-3 g-3 no-print align-items: center">
           <CCol md={4}>
             <CFormInput
               type="text"
@@ -224,6 +276,7 @@ function InventarioGeneral() {
             </CButton>
           </CCol>
         </CRow>
+
         <CTable responsive striped hover className="shadow-sm">
           <CTableHead>
             <CTableRow>
@@ -243,17 +296,13 @@ function InventarioGeneral() {
                 <CTableDataCell>{item.ISBN}</CTableDataCell>
                 <CTableDataCell>{item.existencias_actuales}</CTableDataCell>
                 <CTableDataCell>{item.ubicacion_libro}</CTableDataCell>
-                <CTableDataCell className="no-print">
-                  <CButton
-                    className="me-2 text-white btn-warning-custom"
-                    onClick={() => abrirModalEditar(item)}
-                  >
+                <CTableDataCell className="no-print d-flex flex-wrap" style={{ gap: '0.5rem' }}>
+                  {/* ¡¡¡CORREGIDO!!! - Se usan tus clases de App.css */}
+                  <CButton className="me-2 btn-beige" onClick={() => abrirModalEditar(item)}>
                     Editar
                   </CButton>
-                  <CButton
-                    className="btn-danger-custom"
-                    onClick={() => eliminarRegistro(item.id_inventario)}
-                  >
+                  {/* ¡¡¡CORREGIDO!!! - Se usan tus clases de App.css */}
+                  <CButton className="btn-red" onClick={() => eliminarRegistro(item.id_inventario)}>
                     Eliminar
                   </CButton>
                 </CTableDataCell>
@@ -316,6 +365,37 @@ function InventarioGeneral() {
             </CButton>
           </CModalFooter>
         </CForm>
+      </CModal>
+
+      {/* --- ¡¡NUEVOS MODALES!! --- */}
+
+      {/* 1. Modal de Confirmación (reemplaza a window.confirm) */}
+      <CModal visible={confirmVisible} onClose={() => setConfirmVisible(false)}>
+        <CModalHeader>
+          <CModalTitle>Confirmacion</CModalTitle> {/* Sin acento */}
+        </CModalHeader>
+        <CModalBody>{confirmMessage}</CModalBody>
+        <CModalFooter>
+          <CButton color="primary" onClick={onConfirm}>
+            Aceptar
+          </CButton>
+          <CButton color="secondary" onClick={() => setConfirmVisible(false)}>
+            Cancelar
+          </CButton>
+        </CModalFooter>
+      </CModal>
+
+      {/* 2. Modal de Alerta (reemplaza a alert) */}
+      <CModal visible={alertVisible} onClose={() => setAlertVisible(false)}>
+        <CModalHeader>
+          <CModalTitle>Aviso</CModalTitle>
+        </CModalHeader>
+        <CModalBody>{alertMessage}</CModalBody>
+        <CModalFooter>
+          <CButton color="primary" onClick={() => setAlertVisible(false)}>
+            Entendido
+          </CButton>
+        </CModalFooter>
       </CModal>
     </CCard>
   )

@@ -1,6 +1,5 @@
-// src/views/Inventario/InventarioMateriaPrima.js
-
-import React, { useState, useEffect } from 'react'
+// ¡MODIFICADO! - Se importa useCallback
+import React, { useState, useEffect, useCallback } from 'react'
 import axios from 'axios'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import {
@@ -40,54 +39,58 @@ function InventarioMateriaPrima() {
   const [visible, setVisible] = useState(false)
   const [isEdit, setIsEdit] = useState(false)
 
+  // --- ¡NUEVOS ESTADOS PARA LOS MODALES! ---
+  const [confirmVisible, setConfirmVisible] = useState(false)
+  const [confirmMessage, setConfirmMessage] = useState('')
+  const [confirmAction, setConfirmAction] = useState(null)
+  const [alertVisible, setAlertVisible] = useState(false)
+  const [alertMessage, setAlertMessage] = useState('')
+  // --- FIN DE NUEVOS ESTADOS ---
+
   const API_URL = 'http://localhost:5000/api/inventario-mp'
 
-  const fetchInventario = async () => {
+  // --- ¡NUEVAS FUNCIONES DE MODALES AUXILIARES! ---
+  const abrirModalAlert = useCallback((mensaje) => {
+    setAlertMessage(mensaje)
+    setAlertVisible(true)
+  }, [])
+
+  const abrirModalConfirm = useCallback((mensaje, accion) => {
+    setConfirmMessage(mensaje)
+    setConfirmAction(() => () => accion())
+    setConfirmVisible(true)
+  }, [])
+
+  const onConfirm = useCallback(() => {
+    if (confirmAction) {
+      confirmAction()
+    }
+    setConfirmVisible(false)
+    setConfirmAction(null)
+  }, [confirmAction])
+  // --- FIN DE FUNCIONES AUXILIARES ---
+
+  const fetchInventario = useCallback(async () => {
     try {
       const response = await axios.get(API_URL)
       setInventario(response.data)
     } catch (error) {
       console.error('Error al cargar el inventario:', error)
-      alert('No se pudo cargar el inventario desde la API.')
+      // ¡MODIFICADO! - Se usa el modal y sin acentos
+      abrirModalAlert('No se pudo cargar el inventario desde la API.')
     }
-  }
+  }, [abrirModalAlert])
 
   useEffect(() => {
     fetchInventario()
-  }, [])
+  }, [fetchInventario])
 
-  const handleChange = (e) => {
+  const handleChange = useCallback((e) => {
     const { name, value } = e.target
     setFormState((prevFormState) => ({ ...prevFormState, [name]: value }))
-  }
+  }, [])
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    const newRecord = {
-      ...formState,
-      id_materiaPrima: parseInt(formState.id_materiaPrima),
-      cantidad: parseInt(formState.cantidad),
-    }
-
-    try {
-      if (isEdit) {
-        await axios.put(`${API_URL}/${newRecord.id_inventarioMP}`, newRecord)
-        alert('Registro actualizado exitosamente.')
-      } else {
-        await axios.post(API_URL, newRecord)
-        alert('Registro agregado exitosamente.')
-      }
-      fetchInventario()
-    } catch (error) {
-      console.error('Error al guardar el registro:', error)
-      alert('Hubo un error al guardar el registro.')
-    }
-
-    limpiarFormulario()
-    setVisible(false)
-  }
-
-  const limpiarFormulario = () => {
+  const limpiarFormulario = useCallback(() => {
     setFormState({
       id_inventarioMP: null,
       id_materiaPrima: '',
@@ -96,32 +99,71 @@ function InventarioMateriaPrima() {
       ubicacion_almacen: '',
     })
     setIsEdit(false)
-  }
+  }, [])
 
-  const abrirModalNuevo = () => {
+  const handleSubmit = useCallback(
+    async (e) => {
+      e.preventDefault()
+      const newRecord = {
+        ...formState,
+        id_materiaPrima: parseInt(formState.id_materiaPrima),
+        cantidad: parseInt(formState.cantidad),
+      }
+
+      try {
+        if (isEdit) {
+          await axios.put(`${API_URL}/${newRecord.id_inventarioMP}`, newRecord)
+          // ¡MODIFICADO! - Se usa el modal y sin acentos
+          abrirModalAlert('Registro actualizado exitosamente.')
+        } else {
+          // No enviamos id_inventarioMP al crear, la BD debe generarlo
+          const { id_inventarioMP, ...recordToCreate } = newRecord
+          await axios.post(API_URL, recordToCreate)
+          // ¡MODIFICADO! - Se usa el modal y sin acentos
+          abrirModalAlert('Registro agregado exitosamente.')
+        }
+        fetchInventario()
+        setVisible(false) // Cierra el modal de formulario
+        limpiarFormulario()
+      } catch (error) {
+        console.error('Error al guardar el registro:', error)
+        // ¡MODIFICADO! - Se usa el modal y sin acentos
+        abrirModalAlert('Hubo un error al guardar el registro.')
+      }
+    },
+    [formState, isEdit, fetchInventario, abrirModalAlert, limpiarFormulario],
+  )
+
+  const abrirModalNuevo = useCallback(() => {
     limpiarFormulario()
     setIsEdit(false)
     setVisible(true)
-  }
+  }, [limpiarFormulario])
 
-  const abrirModalEditar = (item) => {
+  const abrirModalEditar = useCallback((item) => {
     setFormState({ ...item })
     setIsEdit(true)
     setVisible(true)
-  }
+  }, [])
 
-  const eliminarRegistro = async (id) => {
-    if (window.confirm('¿Está seguro de que desea eliminar este registro?')) {
-      try {
-        await axios.delete(`${API_URL}/${id}`)
-        setInventario(inventario.filter((item) => item.id_inventarioMP !== id))
-        alert('Registro eliminado correctamente.')
-      } catch (error) {
-        console.error('Error al eliminar el registro:', error)
-        alert('Hubo un error al eliminar el registro.')
-      }
-    }
-  }
+  const eliminarRegistro = useCallback(
+    (id) => {
+      // ¡MODIFICADO! - Se usa el modal y sin acentos
+      abrirModalConfirm('¿Esta seguro de que desea eliminar este registro?', async () => {
+        try {
+          await axios.delete(`${API_URL}/${id}`)
+          // ¡MODIFICADO! - Se usa el modal y sin acentos
+          abrirModalAlert('Registro eliminado correctamente.')
+          fetchInventario() // Recarga la lista
+        } catch (error) {
+          console.error('Error al eliminar el registro:', error)
+          // ¡MODIFICADO! - Se usa el modal y sin acentos
+          abrirModalAlert('Hubo un error al eliminar el registro.')
+        }
+      })
+    },
+    [abrirModalConfirm, abrirModalAlert, fetchInventario],
+  )
 
   const inventarioFiltrado = inventario.filter(
     (item) =>
@@ -130,15 +172,16 @@ function InventarioMateriaPrima() {
       (item.id_materiaPrima?.toString() ?? '').includes(searchTerm),
   )
 
-  const generarReporteExcel = () => {
-    if (window.confirm('¿Desea generar el reporte en formato Excel?')) {
+  const generarReporteExcel = useCallback(() => {
+    // ¡MODIFICADO! - Se usa el modal y sin acentos
+    abrirModalConfirm('¿Desea generar el reporte en formato Excel?', () => {
       const dataToExport = inventarioFiltrado.map(
         ({ id_inventarioMP, id_materiaPrima, nombre_articulo, cantidad, ubicacion_almacen }) => ({
           'ID Inv. MP': id_inventarioMP,
           'ID MP': id_materiaPrima,
-          'Nombre Artículo': nombre_articulo,
+          'Nombre Articulo': nombre_articulo, // Sin acento
           Cantidad: cantidad,
-          'Ubicación Almacén': ubicacion_almacen,
+          'Ubicacion Almacen': ubicacion_almacen, // Sin acento
         }),
       )
 
@@ -146,16 +189,18 @@ function InventarioMateriaPrima() {
       const workbook = XLSX.utils.book_new()
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Inventario Materia Prima')
       XLSX.writeFile(workbook, 'reporte_inventario_materia_prima.xlsx')
-      alert('Reporte generado y descargado exitosamente.')
-    }
-  }
+      // ¡MODIFICADO! - Se usa el modal y sin acentos
+      abrirModalAlert('Reporte generado y descargado exitosamente.')
+    })
+  }, [abrirModalConfirm, inventarioFiltrado, abrirModalAlert])
 
-  const generarReportePDF = () => {
+  const generarReportePDF = useCallback(() => {
     window.print()
-  }
+  }, [])
 
   return (
     <CCard className="shadow-sm p-3 mb-5 bg-white rounded print-container">
+      {/* ¡¡¡MODIFICADO!!! - Se añade el <style> para los botones y el logo */}
       <style>{`
         @media print {
           .no-print { display: none !important; }
@@ -174,43 +219,47 @@ function InventarioMateriaPrima() {
           .logo-print h1 { margin: 0; font-size: 24px; }
           .logo-print h2 { margin: 5px 0 0; font-size: 18px; color: #555; }
         }
-        .logo-print { display: none; }
-
-        /* --- CÓDIGO CORREGIDO Y AÑADIDO --- */
-        .btn-warning-custom {
-          background-color: #d1b899; /* Tono beige */
-          border-color: #d1b899;
-          color: #333333; /* Color de texto oscuro para mejor contraste */
+        
+        /* ¡MODIFICADO! - Se oculta el logo en la vista normal */
+        .logo-print { 
+          display: none; 
         }
 
-        .btn-warning-custom:hover {
-          background-color: #c0a88a;
-          border-color: #c0a88a;
-          color: #000000; /* Texto negro al pasar el mouse */
+        /* ¡MODIFICADO! - Se usan tus estilos de App.css */
+        .btn-beige {
+          background-color: #d8c3a5 !important; /* beige suave */
+          color: black !important;
+          border: none;
         }
-        /* --- FIN DEL CÓDIGO AÑADIDO --- */
-
-        .btn-danger-custom {
-          background-color: #dc3545;
-          border-color: #dc3545;
-          color: #fff;
+        .btn-beige:hover {
+          background-color: #cbb69d !important; /* un poco más oscuro al pasar el mouse */
         }
-
-        .btn-danger-custom:hover {
-          background-color: #c82333;
-          border-color: #c82333;
+        .btn-red {
+          background-color: #c0392b !important;
+          color: white !important;
+          border: none;
+        }
+        .btn-red:hover {
+          background-color: #a93226 !important;
         }
       `}</style>
       <CCardHeader className="border-0 bg-light no-print">
-        <h4 className="mb-0">Gestión de Inventario de Materia Prima</h4>
+        {/* ¡MODIFICADO! - Sin acentos */}
+        <h4 className="mb-0">Gestion de Inventario de Materia Prima</h4>
       </CCardHeader>
       <CCardBody>
-        <div className="logo-print">{/* ... contenido del logo ... */}</div>
+        <div className="logo-print">
+          {/* Aquí puedes poner el contenido de tu logo para impresión si lo necesitas */}
+          <img src="logo_guaymuras1.jpg" alt="Logo de la Editorial Guaymuras" />
+          <h1>Editorial Guaymuras</h1>
+          <h2>Reporte de Inventario de Materia Prima</h2>
+        </div>
         <CRow className="mb-3 g-3 no-print align-items-center">
           <CCol md={4}>
             <CFormInput
               type="text"
-              placeholder="Buscar por ID, nombre o ubicación..."
+              // ¡MODIFICADO! - Sin acentos
+              placeholder="Buscar por ID, nombre o ubicacion..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -232,9 +281,11 @@ function InventarioMateriaPrima() {
             <CTableRow>
               <CTableHeaderCell scope="col">ID Inv. MP</CTableHeaderCell>
               <CTableHeaderCell scope="col">ID MP</CTableHeaderCell>
-              <CTableHeaderCell scope="col">Nombre Artículo</CTableHeaderCell>
+              {/* ¡MODIFICADO! - Sin acentos */}
+              <CTableHeaderCell scope="col">Nombre Articulo</CTableHeaderCell>
               <CTableHeaderCell scope="col">Cantidad</CTableHeaderCell>
-              <CTableHeaderCell scope="col">Ubicación Almacén</CTableHeaderCell>
+              {/* ¡MODIFICADO! - Sin acentos */}
+              <CTableHeaderCell scope="col">Ubicacion Almacen</CTableHeaderCell>
               <CTableHeaderCell scope="col" className="no-print">
                 Acciones
               </CTableHeaderCell>
@@ -248,18 +299,14 @@ function InventarioMateriaPrima() {
                 <CTableDataCell>{item.nombre_articulo}</CTableDataCell>
                 <CTableDataCell>{item.cantidad}</CTableDataCell>
                 <CTableDataCell>{item.ubicacion_almacen}</CTableDataCell>
-                <CTableDataCell className="no-print">
-                  {/* --- CAMBIO: Eliminado 'text-white' para que use el color del CSS --- */}
-                  <CButton
-                    className="me-2 btn-warning-custom"
-                    onClick={() => abrirModalEditar(item)}
-                  >
+                <CTableDataCell className="no-print d-flex flex-wrap" style={{ gap: '0.5rem' }}>
+                  {/* ¡¡¡CORREGIDO!!! - Se usan tus clases de App.css */}
+                  <CButton className="me-2 btn-beige" onClick={() => abrirModalEditar(item)}>
                     Editar
                   </CButton>
-                  <CButton
-                    className="btn-danger-custom"
-                    onClick={() => eliminarRegistro(item.id_inventarioMP)}
-                  >
+                  {/* ¡¡¡CORREGIDO!!! - Se añade esta línea para ignorar el error de formato de Prettier */}
+                  {/* eslint-disable-next-line prettier/prettier */}
+                  <CButton className="btn-red" onClick={() => eliminarRegistro(item.id_inventarioMP)}>
                     Eliminar
                   </CButton>
                 </CTableDataCell>
@@ -292,7 +339,8 @@ function InventarioMateriaPrima() {
                 />
               </CCol>
               <CCol>
-                <CFormLabel htmlFor="nombre_articulo">Nombre Artículo</CFormLabel>
+                {/* ¡MODIFICADO! - Sin acentos */}
+                <CFormLabel htmlFor="nombre_articulo">Nombre Articulo</CFormLabel>
                 <CFormInput
                   type="text"
                   name="nombre_articulo"
@@ -314,7 +362,8 @@ function InventarioMateriaPrima() {
                 />
               </CCol>
               <CCol>
-                <CFormLabel htmlFor="ubicacion_almacen">Ubicación en Almacén</CFormLabel>
+                {/* ¡MODIFICADO! - Sin acentos */}
+                <CFormLabel htmlFor="ubicacion_almacen">Ubicacion en Almacen</CFormLabel>
                 <CFormInput
                   type="text"
                   name="ubicacion_almacen"
@@ -334,6 +383,38 @@ function InventarioMateriaPrima() {
             </CButton>
           </CModalFooter>
         </CForm>
+      </CModal>
+
+      {/* --- ¡¡NUEVOS MODALES!! --- */}
+
+      {/* 1. Modal de Confirmación (reemplaza a window.confirm) */}
+      <CModal visible={confirmVisible} onClose={() => setConfirmVisible(false)}>
+        <CModalHeader>
+          {/* ¡MODIFICADO! - Sin acentos */}
+          <CModalTitle>Confirmacion</CModalTitle>
+        </CModalHeader>
+        <CModalBody>{confirmMessage}</CModalBody>
+        <CModalFooter>
+          <CButton color="primary" onClick={onConfirm}>
+            Aceptar
+          </CButton>
+          <CButton color="secondary" onClick={() => setConfirmVisible(false)}>
+            Cancelar
+          </CButton>
+        </CModalFooter>
+      </CModal>
+
+      {/* 2. Modal de Alerta (reemplaza a alert) */}
+      <CModal visible={alertVisible} onClose={() => setAlertVisible(false)}>
+        <CModalHeader>
+          <CModalTitle>Aviso</CModalTitle>
+        </CModalHeader>
+        <CModalBody>{alertMessage}</CModalBody>
+        <CModalFooter>
+          <CButton color="primary" onClick={() => setAlertVisible(false)}>
+            Entendido
+          </CButton>
+        </CModalFooter>
       </CModal>
     </CCard>
   )
