@@ -1,0 +1,140 @@
+/* Dashboard.css */
+:root {
+  --bg: #f5f1eb;
+  --primary: #8a2c31;
+  --glass: rgba(255, 255, 255, 0.55);
+  --shadow: rgba(138, 44, 49, 0.15);
+  --transition: 0.3s ease;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.dashboard-overlay {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background: linear-gradient(135deg, #ebe5d8 0%, #d8cfc1 100%);
+  font-family: 'Inter', sans-serif;
+}
+
+.dashboard-sidebar {
+  width: 300px;
+  height: 100vh;
+  overflow-y: auto;
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+.dashboard-sidebar.open {
+  transform: translateX(0);
+}
+.close-sidebar {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 24px;
+  margin: 16px;
+  cursor: pointer;
+}
+
+.dashboard-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+/* Topbar centrado */
+.dashboard-topbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: var(--glass);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--shadow);
+}
+
+.topbar-left,
+.topbar-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.topbar-left {
+  justify-content: flex-start;
+}
+
+.topbar-right {
+  justify-content: flex-end;
+}
+
+.topbar-center {
+  flex: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.logo-img {
+  height: 48px;
+  width: auto;
+}
+
+.brand-text {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.topbar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(138, 44, 49, 0.05);
+  color: var(--primary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.topbar-btn:hover {
+  background: rgba(138, 44, 49, 0.12);
+}
+
+/* Contenido dinámico */
+.dashboard-content {
+  flex: 1;
+  padding: 16px 24px;
+  overflow-y: auto;
+  background: var(--glass);
+  backdrop-filter: blur(20px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dashboard-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 20;
+    transform: translateX(-100%);
+  }
+  .close-sidebar,
+  .menu-toggle {
+    display: block;
+  }
+}
