@@ -37,6 +37,7 @@ import ReporteVentas from '../views/Informes/ReporteVentas.jsx';
 
 /* ADMINISTRACIÓN */
 import GestionUsuarios from '../views/Usuarios/GestionUsuarios.jsx';
+import Bitacora from '../views/Administracion/Bitacora.jsx';
 
 /* PARÁMETROS */
 import ParametrosGeneral from '../views/parametros/ParametrosGeneral.jsx';
@@ -98,8 +99,10 @@ export const router = createBrowserRouter([
       { path: 'informes/compras', element: <ReporteCompras /> },
       { path: 'informes/ventas', element: <ReporteVentas /> },
 
+
       // Administración
       { path: 'administracion/usuarios', element: <GestionUsuarios /> },
+      { path: 'administracion/bitacora', element: <Bitacora /> },
 
       // Parámetros
       { path: 'parametros/general', element: <ParametrosGeneral /> },

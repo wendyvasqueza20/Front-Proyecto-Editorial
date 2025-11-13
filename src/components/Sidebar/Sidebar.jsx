@@ -57,6 +57,7 @@ const menu = [
     icon: <Settings size={20} />,
     sub: [
       { label: 'Gestión de Usuarios', path: '/dashboard/administracion/usuarios' },
+      { label: 'Bitácora', path: '/dashboard/administracion/bitacora' },
     ],
   },
   {
