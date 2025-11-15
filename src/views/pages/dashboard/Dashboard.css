@@ -1,7 +1,9 @@
-/* Dashboard.css */
+
+/* src/views/pages/dashboard/Dashboard.css */
 :root {
   --bg: #f5f1eb;
   --primary: #8a2c31;
+  --primary-light: #a8363b; /* Color más claro para scrollbar */
   --glass: rgba(255, 255, 255, 0.55);
   --shadow: rgba(138, 44, 49, 0.15);
   --transition: 0.3s ease;
@@ -22,45 +24,56 @@ body,
   width: 100vw;
   background: linear-gradient(135deg, #ebe5d8 0%, #d8cfc1 100%);
   font-family: 'Inter', sans-serif;
+  position: relative;
 }
 
+/* ===== SIDEBAR SOLO PARA PC ===== */
 .dashboard-sidebar {
-  width: 300px;
+  width: 260px;
   height: 100vh;
   overflow-y: auto;
   flex-shrink: 0;
-  transition: transform 0.3s ease;
-}
-.dashboard-sidebar.open {
-  transform: translateX(0);
-}
-.close-sidebar {
-  display: none;
-  background: none;
-  border: none;
-  font-size: 24px;
-  margin: 16px;
-  cursor: pointer;
+  transition: all 0.3s ease;
+  background: var(--glass);
+  backdrop-filter: blur(20px);
+  border-right: 1px solid var(--shadow);
+  position: relative;
 }
 
+/* Sidebar completamente oculto */
+.dashboard-sidebar.hidden {
+  width: 0;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-100%);
+}
+
+/* ===== CONTENIDO PRINCIPAL ===== */
 .dashboard-main {
   flex: 1;
   display: flex;
   flex-direction: column;
   height: 100vh;
-  overflow-y: auto;
+  overflow: hidden;
+  transition: margin-left 0.3s ease;
 }
 
-/* Topbar centrado */
+/* Cuando el sidebar está oculto, el contenido se expande */
+.dashboard-main.sidebar-hidden {
+  margin-left: 0;
+}
+
+/* ===== TOPBAR ===== */
 .dashboard-topbar {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 24px;
+  padding: 8px 20px;
   background: var(--glass);
   backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--shadow);
+  height: 60px;
 }
 
 .topbar-left,
@@ -68,6 +81,7 @@ body,
   flex: 1;
   display: flex;
   align-items: center;
+  gap: 10px;
 }
 
 .topbar-left {
@@ -83,58 +97,213 @@ body,
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .logo-img {
-  height: 48px;
+  height: 40px;
   width: auto;
 }
 
 .brand-text {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--primary);
 }
 
-.topbar-btn {
+/* ===== BOTÓN DE CONTROL DEL SIDEBAR ===== */
+.sidebar-control-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
+  justify-content: center;
+  padding: 6px;
   border: none;
-  border-radius: 10px;
+  border-radius: 6px;
   background: rgba(138, 44, 49, 0.05);
   color: var(--primary);
-  font-size: 13px;
   cursor: pointer;
   transition: background var(--transition);
 }
+
+.sidebar-control-btn:hover {
+  background: rgba(138, 44, 49, 0.12);
+}
+
+/* ===== BOTONES DEL TOPBAR ===== */
+.topbar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(138, 44, 49, 0.05);
+  color: var(--primary);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
 .topbar-btn:hover {
   background: rgba(138, 44, 49, 0.12);
 }
 
-/* Contenido dinámico */
+/* ===== CONTENIDO PRINCIPAL SIN SCROLL HORIZONTAL ===== */
 .dashboard-content {
   flex: 1;
-  padding: 16px 24px;
-  overflow-y: auto;
-  background: var(--glass);
-  backdrop-filter: blur(20px);
+  padding: 0;
+  overflow-y: auto; /* Solo scroll vertical cuando sea necesario */
+  overflow-x: hidden; /* Eliminar scroll horizontal */
+  background: transparent;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .dashboard-sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100vh;
-    z-index: 20;
-    transform: translateX(-100%);
+.dashboard-page-content {
+  flex: 1;
+  padding: 16px 20px;
+  overflow-y: auto; /* Solo scroll vertical cuando sea necesario */
+  overflow-x: hidden; /* Eliminar scroll horizontal */
+  width: 100%;
+  max-width: 100%;
+}
+
+/* ===== SCROLLBAR VERTICAL PERSONALIZADO ===== */
+/* Scrollbar para el contenido principal */
+.dashboard-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dashboard-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dashboard-content::-webkit-scrollbar-thumb {
+  background: var(--primary-light); /* Color más claro */
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.dashboard-content::-webkit-scrollbar-thumb:hover {
+  background: var(--primary); /* Color original al hover */
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.dashboard-content::-webkit-scrollbar-thumb:active {
+  background: var(--primary);
+}
+
+/* Eliminar scrollbar horizontal */
+.dashboard-content::-webkit-scrollbar-button:horizontal,
+.dashboard-content::-webkit-scrollbar-track:horizontal,
+.dashboard-content::-webkit-scrollbar-thumb:horizontal {
+  display: none;
+}
+
+/* Scrollbar para el contenido de la página */
+.dashboard-page-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dashboard-page-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dashboard-page-content::-webkit-scrollbar-thumb {
+  background: var(--primary-light); /* Color más claro */
+  border-radius: 3px;
+}
+
+.dashboard-page-content::-webkit-scrollbar-thumb:hover {
+  background: var(--primary); /* Color original al hover */
+}
+
+/* Eliminar scrollbar horizontal del contenido */
+.dashboard-page-content::-webkit-scrollbar-button:horizontal,
+.dashboard-page-content::-webkit-scrollbar-track:horizontal,
+.dashboard-page-content::-webkit-scrollbar-thumb:horizontal {
+  display: none;
+}
+
+/* Scrollbar para el sidebar */
+.dashboard-sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.dashboard-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dashboard-sidebar::-webkit-scrollbar-thumb {
+  background: var(--primary-light); /* Color más claro */
+  border-radius: 2px;
+}
+
+.dashboard-sidebar::-webkit-scrollbar-thumb:hover {
+  background: var(--primary); /* Color original al hover */
+}
+
+/* Eliminar scrollbar horizontal del sidebar */
+.dashboard-sidebar::-webkit-scrollbar-button:horizontal,
+.dashboard-sidebar::-webkit-scrollbar-track:horizontal,
+.dashboard-sidebar::-webkit-scrollbar-thumb:horizontal {
+  display: none;
+}
+
+/* ===== PREVENIR SCROLL HORIZONTAL EN TODOS LOS ELEMENTOS ===== */
+.dashboard-content,
+.dashboard-page-content,
+.dashboard-sidebar {
+  overflow-x: hidden !important;
+}
+
+/* Forzar que el contenido no cause scroll horizontal */
+.dashboard-page-content > * {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Animación suave para el contenido */
+.dashboard-page-content {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
   }
-  .close-sidebar,
-  .menu-toggle {
-    display: block;
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Mejorar el rendimiento del scroll */
+.dashboard-content,
+.dashboard-page-content,
+.dashboard-sidebar {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* ===== RESPONSIVE BÁSICO ===== */
+@media (max-width: 768px) {
+  .dashboard-topbar {
+    padding: 8px 16px;
+  }
+  
+  .topbar-center {
+    flex: 1;
+  }
+  
+  .brand-text {
+    font-size: 18px;
+  }
+  
+  .logo-img {
+    height: 35px;
   }
 }

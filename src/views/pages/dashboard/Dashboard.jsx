@@ -1,11 +1,12 @@
-// src/pages/Dashboard/Dashboard.jsx
+
+// src/views/pages/dashboard/Dashboard.jsx
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import {
   User,
   LogOut,
-  Menu,
-  X,
+  PanelLeftClose,
+  PanelLeftOpen
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import Sidebar from '../../../components/Sidebar/Sidebar.jsx';
@@ -15,7 +16,7 @@ import './Dashboard.css';
 export default function Dashboard() {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarHidden, setSidebarHidden] = useState(false);
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -48,20 +49,28 @@ export default function Dashboard() {
     navigate('/');
   };
 
+  const toggleSidebar = () => {
+    setSidebarHidden(!sidebarHidden);
+  };
+
   return (
     <div className="dashboard-overlay">
-      <aside className={`dashboard-sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <button className="close-sidebar" onClick={() => setSidebarOpen(false)}>
-          <X />
-        </button>
+      {/* Sidebar - Solo para PC, se oculta completamente */}
+      <aside className={`dashboard-sidebar ${sidebarHidden ? 'hidden' : ''}`}>
         <Sidebar />
       </aside>
 
-      <main className="dashboard-main">
+      {/* Contenido Principal */}
+      <main className={`dashboard-main ${sidebarHidden ? 'sidebar-hidden' : ''}`}>
         <header className="dashboard-topbar">
           <div className="topbar-left">
-            <button className="menu-toggle" onClick={() => setSidebarOpen(true)}>
-              <Menu />
+            {/* Botón para ocultar/mostrar sidebar - Solo en PC */}
+            <button 
+              className="sidebar-control-btn" 
+              onClick={toggleSidebar}
+              title={sidebarHidden ? "Mostrar menú" : "Ocultar menú"}
+            >
+              {sidebarHidden ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
             </button>
           </div>
 
@@ -76,19 +85,21 @@ export default function Dashboard() {
 
           <div className="topbar-right">
             <button className="topbar-btn" onClick={() => navigate('/dashboard/perfil')}>
-              <User size={18} />
+              <User size={16} />
               <span>Perfil</span>
             </button>
             <button className="topbar-btn" onClick={() => setShowModal(true)}>
-              <LogOut size={18} />
+              <LogOut size={16} />
               <span>Salir</span>
             </button>
           </div>
         </header>
 
-        {/* Sin fondo oscuro, sin bordes, sin bienvenida */}
-        <section className="dashboard-content-clean">
-          <Outlet />
+        {/* Contenido Centrado */}
+        <section className="dashboard-content">
+          <div className="dashboard-page-content">
+            <Outlet />
+          </div>
         </section>
       </main>
 

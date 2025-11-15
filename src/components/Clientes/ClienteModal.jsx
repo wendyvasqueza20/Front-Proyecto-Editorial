@@ -1,7 +1,8 @@
 
-//src/components/Clientes/ClienteModal.jsx
+//src/components/Clientes/ClienteModal
 import React, { useState, useEffect } from 'react'
-import { Modal, Form, Row, Col, Button, Alert } from 'react-bootstrap'
+import { Modal, Form, Row, Col, Button, Alert, Spinner } from 'react-bootstrap'
+import Swal from 'sweetalert2'
 
 const ClienteModal = ({ 
   show, 
@@ -10,7 +11,8 @@ const ClienteModal = ({
   formData, 
   onChange, 
   editId,
-  loading = false 
+  loading = false,
+  tiposClientes = []
 }) => {
   const [errors, setErrors] = useState({})
   const [touched, setTouched] = useState({})
@@ -24,12 +26,31 @@ const ClienteModal = ({
     id_tipo_cliente: '',
   })
 
-  const tiposClientes = [
-    { value: '', label: 'Seleccione el tipo de cliente' },
-    { value: 1, label: 'Minorista' },
-    { value: 2, label: 'Mayorista' },
-    { value: 3, label: 'Institucional' },
-  ]
+  // Mostrar SweetAlert de éxito
+  const showSuccessAlert = (message) => {
+    Swal.fire({
+      title: '¡Éxito!',
+      text: message,
+      icon: 'success',
+      confirmButtonColor: '#8a2c31',
+      confirmButtonText: 'Aceptar',
+      background: '#f5f1eb',
+      color: '#5c3d24'
+    })
+  }
+
+  // Mostrar SweetAlert de error
+  const showErrorAlert = (message) => {
+    Swal.fire({
+      title: 'Error',
+      text: message,
+      icon: 'error',
+      confirmButtonColor: '#8b6f47',
+      confirmButtonText: 'Aceptar',
+      background: '#f5f1eb',
+      color: '#5c3d24'
+    })
+  }
 
   // Sincronizar formData con localFormData cuando cambia
   useEffect(() => {
@@ -43,6 +64,8 @@ const ClienteModal = ({
         correo: formData.correo || '',
         id_tipo_cliente: formData.id_tipo_cliente || '',
       })
+      setErrors({})
+      setTouched({})
     }
   }, [show, formData])
 
@@ -77,7 +100,7 @@ const ClienteModal = ({
     setErrors(newErrors)
   }
 
-  // Validaciones - RELAJADAS para edición
+  // Validaciones
   const validateField = (name, value) => {
     const newErrors = { ...errors }
 
@@ -159,7 +182,7 @@ const ClienteModal = ({
     return newErrors
   }
 
-  // Validar todo el formulario - RELAJADA para edición
+  // Validar todo el formulario
   const validateForm = () => {
     const newErrors = {}
 
@@ -235,7 +258,7 @@ const ClienteModal = ({
   }
 
   // Manejar envío del formulario
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     
     // Asegurar que nombres y apellidos estén en mayúsculas antes de enviar
@@ -270,39 +293,35 @@ const ClienteModal = ({
           }
         })
       })
-      onSubmit(e)
+      
+      try {
+        await onSubmit(e)
+        // Mostrar SweetAlert de éxito
+        showSuccessAlert(
+          editId !== null 
+            ? 'Cliente actualizado correctamente' 
+            : 'Cliente creado correctamente'
+        )
+      } catch (error) {
+        showErrorAlert('Error al guardar el cliente')
+      }
     }
   }
-
-  // Limpiar errores al cerrar el modal
-  useEffect(() => {
-    if (!show) {
-      setErrors({})
-      setTouched({})
-      setLocalFormData({
-        nombres_cliente: '',
-        apellidos_cliente: '',
-        identidad: '',
-        direccion: '',
-        telefono: '',
-        correo: '',
-        id_tipo_cliente: '',
-      })
-    }
-  }, [show])
 
   const hasErrors = Object.keys(errors).length > 0
 
   return (
-    <Modal show={show} onHide={onHide} backdrop="static" size="lg">
+    <Modal show={show} onHide={onHide} backdrop="static" size="lg" className="modal-clientes">
       <Modal.Header closeButton>
         <Modal.Title>
+          <i className={`bi ${editId !== null ? 'bi-person-check' : 'bi-person-plus'} me-2`}></i>
           {editId !== null ? 'Editar Cliente' : 'Registrar Cliente'}
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
         {hasErrors && Object.keys(touched).length > 0 && (
           <Alert variant="warning" className="mb-3">
+            <i className="bi bi-exclamation-triangle me-2"></i>
             Por favor corrige los errores en el formulario antes de continuar.
           </Alert>
         )}
@@ -310,7 +329,10 @@ const ClienteModal = ({
         <Form onSubmit={handleSubmit} noValidate>
           <Row className="mb-3">
             <Col md={6}>
-              <Form.Label>Nombres</Form.Label>
+              <Form.Label>
+                <i className="bi bi-person me-1"></i>
+                Nombres 
+              </Form.Label>
               <Form.Control
                 type="text"
                 name="nombres_cliente"
@@ -322,13 +344,18 @@ const ClienteModal = ({
                 isInvalid={touched.nombres_cliente && errors.nombres_cliente}
                 isValid={touched.nombres_cliente && !errors.nombres_cliente}
                 style={{ textTransform: 'uppercase' }}
+                
               />
               <Form.Control.Feedback type="invalid">
+                <i className="bi bi-x-circle me-1"></i>
                 {errors.nombres_cliente}
               </Form.Control.Feedback>
             </Col>
             <Col md={6}>
-              <Form.Label>Apellidos</Form.Label>
+              <Form.Label>
+                <i className="bi bi-person me-1"></i>
+                Apellidos 
+              </Form.Label>
               <Form.Control
                 type="text"
                 name="apellidos_cliente"
@@ -340,8 +367,10 @@ const ClienteModal = ({
                 isInvalid={touched.apellidos_cliente && errors.apellidos_cliente}
                 isValid={touched.apellidos_cliente && !errors.apellidos_cliente}
                 style={{ textTransform: 'uppercase' }}
+               
               />
               <Form.Control.Feedback type="invalid">
+                <i className="bi bi-x-circle me-1"></i>
                 {errors.apellidos_cliente}
               </Form.Control.Feedback>
             </Col>
@@ -349,7 +378,10 @@ const ClienteModal = ({
 
           <Row className="mb-3">
             <Col md={6}>
-              <Form.Label>Identidad *</Form.Label>
+              <Form.Label>
+                <i className="bi bi-credit-card me-1"></i>
+                Identidad 
+              </Form.Label>
               <Form.Control
                 type="text"
                 name="identidad"
@@ -363,11 +395,15 @@ const ClienteModal = ({
                 placeholder="Ej: 0801-1990-12345"
               />
               <Form.Control.Feedback type="invalid">
+                <i className="bi bi-x-circle me-1"></i>
                 {errors.identidad}
               </Form.Control.Feedback>
             </Col>
             <Col md={6}>
-              <Form.Label>Teléfono</Form.Label>
+              <Form.Label>
+                <i className="bi bi-telephone me-1"></i>
+                Teléfono
+              </Form.Label>
               <Form.Control
                 type="text"
                 name="telefono"
@@ -377,8 +413,10 @@ const ClienteModal = ({
                 disabled={loading}
                 isInvalid={touched.telefono && errors.telefono}
                 isValid={touched.telefono && !errors.telefono && localFormData.telefono}
+                
               />
               <Form.Control.Feedback type="invalid">
+                <i className="bi bi-x-circle me-1"></i>
                 {errors.telefono}
               </Form.Control.Feedback>
             </Col>
@@ -386,7 +424,10 @@ const ClienteModal = ({
 
           <Row className="mb-3">
             <Col md={6}>
-              <Form.Label>Correo Electrónico</Form.Label>
+              <Form.Label>
+                <i className="bi bi-envelope me-1"></i>
+                Correo Electrónico
+              </Form.Label>
               <Form.Control
                 type="email"
                 name="correo"
@@ -399,11 +440,15 @@ const ClienteModal = ({
                 placeholder="ejemplo@correo.com"
               />
               <Form.Control.Feedback type="invalid">
+                <i className="bi bi-x-circle me-1"></i>
                 {errors.correo}
               </Form.Control.Feedback>
             </Col>
             <Col md={6}>
-              <Form.Label>Tipo de Cliente</Form.Label>
+              <Form.Label>
+                <i className="bi bi-tags me-1"></i>
+                Tipo de Cliente 
+              </Form.Label>
               <Form.Select
                 name="id_tipo_cliente"
                 value={localFormData.id_tipo_cliente || ''}
@@ -421,14 +466,18 @@ const ClienteModal = ({
                 ))}
               </Form.Select>
               <Form.Control.Feedback type="invalid">
+                <i className="bi bi-x-circle me-1"></i>
                 {errors.id_tipo_cliente}
               </Form.Control.Feedback>
             </Col>
           </Row>
 
-          <Row className="mb-3">
+          <Row className="mb-4">
             <Col md={12}>
-              <Form.Label>Dirección</Form.Label>
+              <Form.Label>
+                <i className="bi bi-geo-alt me-1"></i>
+                Dirección
+              </Form.Label>
               <Form.Control
                 type="text"
                 name="direccion"
@@ -438,16 +487,18 @@ const ClienteModal = ({
                 disabled={loading}
                 isInvalid={touched.direccion && errors.direccion}
                 isValid={touched.direccion && !errors.direccion && localFormData.direccion}
-                placeholder="Ej: Colonia Los Pinos, Calle Principal #123"
+                
               />
               <Form.Control.Feedback type="invalid">
+                <i className="bi bi-x-circle me-1"></i>
                 {errors.direccion}
               </Form.Control.Feedback>
             </Col>
           </Row>
 
-          <div className="d-flex justify-content-end gap-2">
+          <div className="d-flex justify-content-end gap-2 pt-3 border-top">
             <Button variant="secondary" onClick={onHide} disabled={loading}>
+              <i className="bi bi-x-circle me-1"></i>
               Cancelar
             </Button>
             <Button 
@@ -455,7 +506,17 @@ const ClienteModal = ({
               type="submit" 
               disabled={loading || (hasErrors && Object.keys(touched).length > 0)}
             >
-              {loading ? 'Guardando...' : (editId !== null ? 'Actualizar Cliente' : 'Guardar Cliente')}
+              {loading ? (
+                <>
+                  <Spinner animation="border" size="sm" className="me-2" />
+                  Guardando...
+                </>
+              ) : (
+                <>
+                  <i className={`bi ${editId !== null ? 'bi-check-circle' : 'bi-save'} me-1`}></i>
+                  {editId !== null ? 'Actualizar Cliente' : 'Guardar Cliente'}
+                </>
+              )}
             </Button>
           </div>
         </Form>

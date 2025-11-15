@@ -1,4 +1,5 @@
-/* Sidebar.css */
+
+/* src/components/Sidebar/Sidebar.css */
 :root {
   --glass: rgba(255, 255, 255, 0.55);
   --shadow: rgba(138, 44, 49, 0.15);
@@ -8,52 +9,71 @@
   --transition: 0.3s ease;
 }
 
+/* Sidebar Normal */
 .sidebar {
-  width: 300px; /* más ancho */
+  width: 260px;
   display: flex;
   flex-direction: column;
-  padding: 32px 20px;
+  padding: 20px 16px;
   background: var(--glass);
   backdrop-filter: blur(20px);
   border-right: 1px solid var(--shadow);
+  font-size: 0.9rem;
+  height: 100vh;
+  overflow-y: auto;
+  transition: all 0.3s ease;
+  position: relative;
 }
 
+/* Sidebar Colapsado */
+.sidebar.collapsed {
+  width: 60px;
+  padding: 20px 8px;
+}
+
+/* Header - Oculto cuando está colapsado */
 .sidebar-header {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.sidebar.collapsed .sidebar-header {
+  display: none;
 }
 
 .sidebar-logo-img {
-  height: 60px;
+  height: 50px;
   width: auto;
 }
 
 .sidebar-brand-text {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   color: var(--primary);
   font-weight: 700;
-  font-size: 18px;
+  font-size: 16px;
 }
 
+/* Navegación */
 .sidebar-nav {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
+/* Enlaces y elementos padres */
 .sidebar-link,
 .sidebar-parent {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  border-radius: 12px;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
   color: var(--brown);
   text-decoration: none;
   background: none;
@@ -63,22 +83,50 @@
   transition: background var(--transition), color var(--transition);
   justify-content: flex-start !important;
   text-align: left;
+  font-size: 0.9rem;
+  position: relative;
 }
 
 .sidebar-parent {
   justify-content: space-between;
 }
 
+/* Cuando está colapsado - Solo íconos */
+.sidebar.collapsed .sidebar-link,
+.sidebar.collapsed .sidebar-parent {
+  justify-content: center;
+  padding: 8px;
+  gap: 0;
+}
+
+.sidebar.collapsed .sidebar-link span:not(.sidebar-icon),
+.sidebar.collapsed .sidebar-parent span:not(.sidebar-icon),
+.sidebar.collapsed .sidebar-arrow {
+  display: none;
+}
+
+/* Íconos */
+.sidebar-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  flex-shrink: 0;
+}
+
+/* Flecha de submenús */
 .sidebar-arrow {
-  font-size: 10px;
+  font-size: 9px;
   transition: transform var(--transition);
   margin-left: auto;
+  flex-shrink: 0;
 }
 
 .sidebar-arrow.open {
   transform: rotate(180deg);
 }
 
+/* Estados hover y activo */
 .sidebar-link:hover,
 .sidebar-link.active,
 .sidebar-parent:hover {
@@ -87,21 +135,27 @@
   font-weight: 600;
 }
 
+/* Submenús */
 .sidebar-sub {
   overflow: hidden;
   max-height: 0;
   transition: max-height 0.3s ease;
-  padding-left: 40px;
+  padding-left: 32px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-top: 6px;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+/* Ocultar submenús cuando está colapsado */
+.sidebar.collapsed .sidebar-sub {
+  display: none;
 }
 
 .sidebar-sub a {
-  padding: 8px 12px;
-  font-size: 14px;
-  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  border-radius: 6px;
   color: var(--brown-light);
   text-decoration: none;
   transition: background var(--transition), color var(--transition);
@@ -112,4 +166,103 @@
 .sidebar-sub a.active {
   background: rgba(138, 44, 49, 0.06);
   color: var(--primary);
+}
+
+/* Tooltips para sidebar colapsado */
+.sidebar.collapsed .sidebar-link:hover::after,
+.sidebar.collapsed .sidebar-parent:hover::after {
+  content: attr(title);
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--primary);
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  margin-left: 8px;
+  z-index: 1000;
+  pointer-events: none;
+  animation: fadeIn 0.2s ease;
+}
+
+/* Animación para tooltips */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
+/* Scrollbar personalizado */
+.sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: rgba(138, 44, 49, 0.05);
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: rgba(138, 44, 49, 0.2);
+  border-radius: 2px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgba(138, 44, 49, 0.3);
+}
+
+/* Responsive para móviles */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 280px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    transform: translateX(-100%);
+  }
+  
+  .sidebar.open {
+    transform: translateX(0);
+  }
+  
+  .sidebar.collapsed {
+    width: 280px;
+    transform: translateX(-100%);
+  }
+  
+  .sidebar.collapsed.open {
+    transform: translateX(0);
+  }
+}
+
+/* Estados de grupo cuando está colapsado */
+.sidebar.collapsed .sidebar-group {
+  position: relative;
+}
+
+/* Mejora visual para elementos activos en modo colapsado */
+.sidebar.collapsed .sidebar-link.active,
+.sidebar.collapsed .sidebar-parent.active {
+  background: rgba(138, 44, 49, 0.12);
+  border: 1px solid rgba(138, 44, 49, 0.2);
+}
+
+/* Transiciones suaves para todos los elementos */
+.sidebar * {
+  transition: all 0.2s ease;
+}
+
+/* Asegurar que no haya desbordamiento en móviles */
+@media (max-width: 768px) {
+  .sidebar {
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  }
 }
