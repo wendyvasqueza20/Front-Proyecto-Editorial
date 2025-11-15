@@ -1,5 +1,3 @@
-// src/views/Inventario/InventarioMateriaPrima.js
-
 import React, { useState, useEffect } from 'react'
 import axios from 'axios'
 import 'bootstrap/dist/css/bootstrap.min.css'
@@ -26,6 +24,7 @@ import {
   CFormLabel,
 } from '@coreui/react'
 import * as XLSX from 'xlsx'
+import Swal from 'sweetalert2' // Importación de SweetAlert2
 
 function InventarioMateriaPrima() {
   const [inventario, setInventario] = useState([])
@@ -37,8 +36,12 @@ function InventarioMateriaPrima() {
     ubicacion_almacen: '',
   })
   const [searchTerm, setSearchTerm] = useState('')
-  const [visible, setVisible] = useState(false)
+  const [visible, setVisible] = useState(false) // Modal de Agregar/Editar
   const [isEdit, setIsEdit] = useState(false)
+
+  // Estados para el modal de eliminación (reemplaza window.confirm)
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false)
+  const [idToDelete, setIdToDelete] = useState(null)
 
   const API_URL = 'http://localhost:5000/api/inventario-mp'
 
@@ -48,7 +51,8 @@ function InventarioMateriaPrima() {
       setInventario(response.data)
     } catch (error) {
       console.error('Error al cargar el inventario:', error)
-      alert('No se pudo cargar el inventario desde la API.')
+      // Reemplazo de alert()
+      Swal.fire('Error', 'No se pudo cargar el inventario desde la API.', 'error')
     }
   }
 
@@ -72,15 +76,18 @@ function InventarioMateriaPrima() {
     try {
       if (isEdit) {
         await axios.put(`${API_URL}/${newRecord.id_inventarioMP}`, newRecord)
-        alert('Registro actualizado exitosamente.')
+        // Reemplazo de alert()
+        Swal.fire('Actualizado', 'Registro actualizado exitosamente.', 'success')
       } else {
         await axios.post(API_URL, newRecord)
-        alert('Registro agregado exitosamente.')
+        // Reemplazo de alert()
+        Swal.fire('Agregado', 'Registro agregado exitosamente.', 'success')
       }
       fetchInventario()
     } catch (error) {
       console.error('Error al guardar el registro:', error)
-      alert('Hubo un error al guardar el registro.')
+      // Reemplazo de alert()
+      Swal.fire('Error', 'Hubo un error al guardar el registro.', 'error')
     }
 
     limpiarFormulario()
@@ -110,17 +117,32 @@ function InventarioMateriaPrima() {
     setVisible(true)
   }
 
-  const eliminarRegistro = async (id) => {
-    if (window.confirm('¿Está seguro de que desea eliminar este registro?')) {
-      try {
-        await axios.delete(`${API_URL}/${id}`)
-        setInventario(inventario.filter((item) => item.id_inventarioMP !== id))
-        alert('Registro eliminado correctamente.')
-      } catch (error) {
-        console.error('Error al eliminar el registro:', error)
-        alert('Hubo un error al eliminar el registro.')
-      }
+  // Abre el modal de confirmación de eliminación de CoreUI
+  const abrirModalEliminar = (id) => {
+    setIdToDelete(id)
+    setDeleteModalVisible(true)
+  }
+
+  // Ejecuta la eliminación real si se confirma en el modal
+  const eliminarRegistroConfirmado = async () => {
+    setDeleteModalVisible(false)
+
+    try {
+      await axios.delete(`${API_URL}/${idToDelete}`)
+      setInventario(inventario.filter((item) => item.id_inventarioMP !== idToDelete))
+      // Reemplazo de alert()
+      Swal.fire('Eliminado', 'Registro eliminado correctamente.', 'success')
+    } catch (error) {
+      console.error('Error al eliminar el registro:', error)
+      // Reemplazo de alert()
+      Swal.fire('Error', 'Hubo un error al eliminar el registro.', 'error')
     }
+    setIdToDelete(null)
+  }
+
+  // Llama al modal de confirmación, reemplazando window.confirm
+  const eliminarRegistro = (id) => {
+    abrirModalEliminar(id)
   }
 
   const inventarioFiltrado = inventario.filter(
@@ -131,23 +153,34 @@ function InventarioMateriaPrima() {
   )
 
   const generarReporteExcel = () => {
-    if (window.confirm('¿Desea generar el reporte en formato Excel?')) {
-      const dataToExport = inventarioFiltrado.map(
-        ({ id_inventarioMP, id_materiaPrima, nombre_articulo, cantidad, ubicacion_almacen }) => ({
-          'ID Inv. MP': id_inventarioMP,
-          'ID MP': id_materiaPrima,
-          'Nombre Artículo': nombre_articulo,
-          Cantidad: cantidad,
-          'Ubicación Almacén': ubicacion_almacen,
-        }),
-      )
+    // Reemplazo de window.confirm() con SweetAlert2
+    Swal.fire({
+      title: 'Generar Reporte',
+      text: "¿Desea generar el reporte en formato Excel?",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, generar',
+      cancelButtonText: 'Cancelar',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const dataToExport = inventarioFiltrado.map(
+          ({ id_inventarioMP, id_materiaPrima, nombre_articulo, cantidad, ubicacion_almacen }) => ({
+            'ID Inv. MP': id_inventarioMP,
+            'ID MP': id_materiaPrima,
+            'Nombre Artículo': nombre_articulo,
+            Cantidad: cantidad,
+            'Ubicación Almacén': ubicacion_almacen,
+          }),
+        )
 
-      const worksheet = XLSX.utils.json_to_sheet(dataToExport)
-      const workbook = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Inventario Materia Prima')
-      XLSX.writeFile(workbook, 'reporte_inventario_materia_prima.xlsx')
-      alert('Reporte generado y descargado exitosamente.')
-    }
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport)
+        const workbook = XLSX.utils.book_new()
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Inventario Materia Prima')
+        XLSX.writeFile(workbook, 'reporte_inventario_materia_prima.xlsx')
+        // Reemplazo de alert()
+        Swal.fire('Generado', 'Reporte generado y descargado exitosamente.', 'success')
+      }
+    })
   }
 
   const generarReportePDF = () => {
@@ -176,7 +209,7 @@ function InventarioMateriaPrima() {
         }
         .logo-print { display: none; }
 
-        /* --- CÓDIGO CORREGIDO Y AÑADIDO --- */
+        /* --- COLORES RESTAURADOS --- */
         .btn-warning-custom {
           background-color: #d1b899; /* Tono beige */
           border-color: #d1b899;
@@ -188,8 +221,7 @@ function InventarioMateriaPrima() {
           border-color: #c0a88a;
           color: #000000; /* Texto negro al pasar el mouse */
         }
-        /* --- FIN DEL CÓDIGO AÑADIDO --- */
-
+        
         .btn-danger-custom {
           background-color: #dc3545;
           border-color: #dc3545;
@@ -249,13 +281,14 @@ function InventarioMateriaPrima() {
                 <CTableDataCell>{item.cantidad}</CTableDataCell>
                 <CTableDataCell>{item.ubicacion_almacen}</CTableDataCell>
                 <CTableDataCell className="no-print">
-                  {/* --- CAMBIO: Eliminado 'text-white' para que use el color del CSS --- */}
+                  {/* Botón Editar con color beige personalizado */}
                   <CButton
                     className="me-2 btn-warning-custom"
                     onClick={() => abrirModalEditar(item)}
                   >
                     Editar
                   </CButton>
+                  {/* Botón Eliminar con color rojo personalizado */}
                   <CButton
                     className="btn-danger-custom"
                     onClick={() => eliminarRegistro(item.id_inventarioMP)}
@@ -269,6 +302,7 @@ function InventarioMateriaPrima() {
         </CTable>
       </CCardBody>
 
+      {/* Modal de Agregar/Editar */}
       <CModal visible={visible} onClose={() => setVisible(false)}>
         <CModalHeader>
           <CModalTitle>{isEdit ? 'Editar Registro' : 'Agregar Nuevo Registro'}</CModalTitle>
@@ -334,6 +368,25 @@ function InventarioMateriaPrima() {
             </CButton>
           </CModalFooter>
         </CForm>
+      </CModal>
+
+      {/* Nuevo Modal de CoreUI para Confirmación de Eliminación */}
+      <CModal visible={deleteModalVisible} onClose={() => setDeleteModalVisible(false)} alignment="center">
+        <CModalHeader>
+          <CModalTitle>⚠️ Confirmar Eliminación</CModalTitle>
+        </CModalHeader>
+        <CModalBody>
+          <p>¿Está seguro de que desea eliminar este registro de inventario?</p>
+          <p className="fw-bold text-danger">Esta acción es irreversible.</p>
+        </CModalBody>
+        <CModalFooter>
+          <CButton color="danger" onClick={eliminarRegistroConfirmado}>
+            Aceptar
+          </CButton>
+          <CButton color="secondary" onClick={() => setDeleteModalVisible(false)}>
+            Cancelar
+          </CButton>
+        </CModalFooter>
       </CModal>
     </CCard>
   )

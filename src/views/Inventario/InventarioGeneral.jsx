@@ -1,7 +1,7 @@
 // src/views/Inventario/InventarioGeneral.js
 
 import React, { useState, useEffect } from 'react'
-import axios from 'axios' // Asegúrate de haberlo instalado (npm install axios)
+import axios from 'axios'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import {
   CCard,
@@ -26,6 +26,7 @@ import {
   CFormLabel,
 } from '@coreui/react'
 import * as XLSX from 'xlsx'
+import Swal from 'sweetalert2' // 👈 Importación de SweetAlert2
 
 function InventarioGeneral() {
   const [inventario, setInventario] = useState([])
@@ -39,7 +40,10 @@ function InventarioGeneral() {
   const [visible, setVisible] = useState(false)
   const [isEdit, setIsEdit] = useState(false)
 
-  // MODIFICADO: Esta es tu URL de la API
+  // ESTADOS PARA EL MODAL DE ELIMINACIÓN
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false)
+  const [idToDelete, setIdToDelete] = useState(null)
+
   const API_URL = 'http://localhost:5000/api/inventario-general'
 
   // Función para obtener los datos de la API
@@ -49,11 +53,11 @@ function InventarioGeneral() {
       setInventario(response.data)
     } catch (error) {
       console.error('Error al obtener los datos del inventario:', error)
-      alert('No se pudieron cargar los registros. Revisa que tu servidor backend esté funcionando.')
+      // 🛑 CORRECCIÓN DE ALERT
+      Swal.fire('Error', 'No se pudieron cargar los registros. Revisa que tu servidor backend esté funcionando.', 'error')
     }
   }
 
-  // Usamos useEffect para llamar a fetchInventario cuando el componente se monta
   useEffect(() => {
     fetchInventario()
   }, [])
@@ -75,22 +79,23 @@ function InventarioGeneral() {
 
     try {
       if (isEdit) {
-        // Lógica de ACTUALIZACIÓN (PUT)
         await axios.put(`${API_URL}/${newRecord.id_inventario}`, newRecord)
-        alert('Registro actualizado exitosamente.')
+        // 🛑 CORRECCIÓN DE ALERT
+        Swal.fire('Actualizado', 'Registro actualizado exitosamente.', 'success')
       } else {
-        // Lógica de CREACIÓN (POST)
-        const { id_inventario, ...recordToCreate } = newRecord // La API debe generar el ID
+        const { id_inventario, ...recordToCreate } = newRecord
         await axios.post(API_URL, recordToCreate)
-        alert('Registro agregado exitosamente.')
+        // 🛑 CORRECCIÓN DE ALERT
+        Swal.fire('Agregado', 'Registro agregado exitosamente.', 'success')
       }
 
-      fetchInventario() // Recargamos la tabla
+      fetchInventario()
       setVisible(false)
       limpiarFormulario()
     } catch (error) {
       console.error('Error al guardar el registro:', error)
-      alert('Ocurrió un error al guardar. Por favor, inténtelo de nuevo.')
+      // 🛑 CORRECCIÓN DE ALERT
+      Swal.fire('Error', 'Ocurrió un error al guardar. Por favor, inténtelo de nuevo.', 'error')
     }
   }
 
@@ -119,20 +124,33 @@ function InventarioGeneral() {
     setVisible(true)
   }
 
-  // Eliminar un registro
-  const eliminarRegistro = async (id) => {
-    if (window.confirm('¿Está seguro de que desea eliminar este registro?')) {
-      try {
-        await axios.delete(`${API_URL}/${id}`)
-        alert('Registro eliminado correctamente.')
-        fetchInventario() // Recargamos la tabla
-      } catch (error) {
-        console.error('Error al eliminar el registro:', error)
-        alert('No se pudo eliminar el registro. Inténtelo de nuevo.')
-      }
-    }
+  // 🛑 NUEVAS FUNCIONES PARA USAR CModal EN LA ELIMINACIÓN
+  const abrirModalEliminar = (id) => {
+    setIdToDelete(id)
+    setDeleteModalVisible(true)
   }
 
+  const eliminarRegistroConfirmado = async () => {
+    setDeleteModalVisible(false) // Cerrar el modal inmediatamente
+
+    try {
+      await axios.delete(`${API_URL}/${idToDelete}`)
+      // 🛑 CORRECCIÓN DE ALERT
+      Swal.fire('Eliminado', 'Registro eliminado correctamente.', 'success')
+      fetchInventario() // Recargamos la tabla
+    } catch (error) {
+      console.error('Error al eliminar el registro:', error)
+      // 🛑 CORRECCIÓN DE ALERT
+      Swal.fire('Error', 'No se pudo eliminar el registro. Inténtelo de nuevo.', 'error')
+    }
+    setIdToDelete(null)
+  }
+
+  // MODIFICADO: Eliminar un registro (ahora llama al modal de confirmación)
+  const eliminarRegistro = (id) => {
+    abrirModalEliminar(id)
+  }
+  
   // Filtrar la tabla de inventario
   const inventarioFiltrado = inventario.filter(
     (item) =>
@@ -141,26 +159,39 @@ function InventarioGeneral() {
       (item.existencias_actuales?.toString() ?? '').includes(searchTerm),
   )
 
-  // Las funciones para generar reportes no cambian
+  // MODIFICADO: Funciones de reporte (reemplazando window.confirm)
   const generarReporteExcel = () => {
-    if (window.confirm('¿Desea generar el reporte en formato Excel?')) {
-      const dataToExport = inventarioFiltrado.map(
-        ({ id_inventario, ISBN, existencias_actuales, ubicacion_libro }) => ({
-          'ID Inventario': id_inventario,
-          ISBN: ISBN,
-          Existencias: existencias_actuales,
-          Ubicación: ubicacion_libro,
-        }),
-      )
+    // 🛑 CORRECCIÓN DE CONFIRM
+    Swal.fire({
+      title: 'Generar Reporte',
+      text: "¿Desea generar el reporte en formato Excel?",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, generar',
+      cancelButtonText: 'Cancelar',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const dataToExport = inventarioFiltrado.map(
+          ({ id_inventario, ISBN, existencias_actuales, ubicacion_libro }) => ({
+            'ID Inventario': id_inventario,
+            ISBN: ISBN,
+            Existencias: existencias_actuales,
+            Ubicación: ubicacion_libro,
+          }),
+        )
 
-      const worksheet = XLSX.utils.json_to_sheet(dataToExport)
-      const workbook = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Inventario General')
-      XLSX.writeFile(workbook, 'reporte_inventario_general.xlsx')
-      alert(
-        'Reporte generado y descargado exitosamente. Nota: El archivo de Excel no contiene el logo ni los títulos del reporte, debe agregarlos manualmente.',
-      )
-    }
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport)
+        const workbook = XLSX.utils.book_new()
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Inventario General')
+        XLSX.writeFile(workbook, 'reporte_inventario_general.xlsx')
+        // 🛑 CORRECCIÓN DE ALERT
+        Swal.fire(
+          'Generado',
+          'Reporte generado y descargado exitosamente.',
+          'success',
+        )
+      }
+    })
   }
 
   const generarReportePDF = () => {
@@ -169,7 +200,6 @@ function InventarioGeneral() {
 
   return (
     <CCard className="shadow-sm p-3 mb-5 bg-white rounded print-container">
-      {/* El resto del código JSX es exactamente el mismo que ya tenías */}
       <style>{`
         @media print {
           .no-print { display: none !important; }
@@ -245,12 +275,14 @@ function InventarioGeneral() {
                 <CTableDataCell>{item.ubicacion_libro}</CTableDataCell>
                 <CTableDataCell className="no-print">
                   <CButton
-                    className="me-2 text-white btn-warning-custom"
+                    // Colores de botón restaurados
+                    className="me-2 btn-warning-custom"
                     onClick={() => abrirModalEditar(item)}
                   >
                     Editar
                   </CButton>
                   <CButton
+                    // Colores de botón restaurados
                     className="btn-danger-custom"
                     onClick={() => eliminarRegistro(item.id_inventario)}
                   >
@@ -263,6 +295,7 @@ function InventarioGeneral() {
         </CTable>
       </CCardBody>
 
+      {/* Modal de Agregar/Editar (existente) */}
       <CModal visible={visible} onClose={() => setVisible(false)}>
         <CModalHeader>
           <CModalTitle>{isEdit ? 'Editar Registro' : 'Agregar Nuevo Registro'}</CModalTitle>
@@ -316,6 +349,25 @@ function InventarioGeneral() {
             </CButton>
           </CModalFooter>
         </CForm>
+      </CModal>
+      
+      {/* 🛑 NUEVO MODAL DE COREUI PARA CONFIRMACIÓN DE ELIMINACIÓN 🛑 */}
+      <CModal visible={deleteModalVisible} onClose={() => setDeleteModalVisible(false)} alignment="center">
+        <CModalHeader>
+          <CModalTitle>⚠️ Confirmar Eliminación</CModalTitle>
+        </CModalHeader>
+        <CModalBody>
+          <p>¿Está seguro de que desea eliminar este registro de inventario?</p>
+          <p className="fw-bold text-danger">Esta acción es irreversible.</p>
+        </CModalBody>
+        <CModalFooter>
+          <CButton color="danger" onClick={eliminarRegistroConfirmado}>
+            Aceptar
+          </CButton>
+          <CButton color="secondary" onClick={() => setDeleteModalVisible(false)}>
+            Cancelar
+          </CButton>
+        </CModalFooter>
       </CModal>
     </CCard>
   )
